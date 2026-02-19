@@ -114,6 +114,10 @@ The application uses a lock file at `~/.spawn-qdrant.lock` to prevent multiple c
 
 All spawned containers are created with `--restart unless-stopped`. This means they will automatically restart if the host machine reboots or if the Docker/Podman service restarts, unless they were explicitly stopped (e.g., via `spawn-qdrant stop`).
 
+### 6. Spawn Delay
+
+When spawning multiple instances, the tool waits **30 seconds** between each instance launch to ensure the previous instance has time to initialize resources.
+
 ## Troubleshooting
 
 - **"Insufficient RAM"**: The tool prevents spawning if `n * 256MB > Available RAM`. Try spawning fewer instances.

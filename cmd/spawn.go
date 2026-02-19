@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/thelaonerd/spawn-qdrant/internal/config"
@@ -138,6 +139,11 @@ If instance_count is not provided, it estimates the maximum instances based on a
 				// Returning error here stops the loop.
 				lock.Remove()
 				return err
+			}
+
+			if i < n-1 {
+				fmt.Println("Waiting 30 seconds before spawning next instance...")
+				time.Sleep(30 * time.Second)
 			}
 		}
 
