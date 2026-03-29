@@ -48,12 +48,12 @@ GRPC_PORT=6334
 
 ## Usage
 
-### 1. Spawn Instances (`spawn`)
+### 1. Check Capacity (`check`)
 
-**Estimate Capacity:**
-Run without arguments to see how many instances your system can support.
+The `check` command validates system RAM and reports how many instances can be run for both startup (256MB/each) and efficient operation (512MB/each).
+
 ```bash
-spawn-qdrant spawn
+spawn-qdrant check
 ```
 *Output example:*
 ```
@@ -62,15 +62,19 @@ Max instances (startup only, 256MB/each): 47
 Max efficient instances (vector ops, 512MB/each): 23
 ```
 
+### 2. Spawn Instances (`spawn`)
+
 **Spawn N Instances:**
 ```bash
 spawn-qdrant spawn 2
 ```
 *This starts `qdrant-01` and `qdrant-02`. Data is stored in `~/.qdrant_storage01` and `~/.qdrant_storage02`.*
 
+If `instance_count` is not provided, it defaults to the estimation logic (similar to `check`).
+
 > **Note**: The command checks if you have enough RAM. It will error if you exceed startup limits and warn if you exceed efficient limits.
 
-### 2. Stop Instances (`stop`)
+### 3. Stop Instances (`stop`)
 
 **Stop a specific instance:**
 ```bash

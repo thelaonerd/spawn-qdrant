@@ -15,6 +15,8 @@ The CLI is built using the **Cobra** library.
   - Ensures the `qdrant/qdrant` image is present.
   - Orchestrates sequential container creation with a **30-second delay** between each to mitigate resource spikes.
   - Manages port assignments (REST starting at 6333, gRPC at 6334 by default).
+- **Check (`check.go`)**:
+  - Validates system RAM and reports how many instances can be run for both startup and efficient operation.
 - **Stop (`stop.go`)**: 
   - Allows stopping individual instances by index (e.g., `stop 1`) or all instances (`stop all`).
   - Cleans up the `qdrant_network` if no containers remain.
