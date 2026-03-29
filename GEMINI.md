@@ -22,6 +22,11 @@ The CLI is built using the **Cobra** library.
   - Cleans up the `qdrant_network` if no containers remain.
 - **Clean (`clean.go`)**: 
   - Performs a destructive reset: stops all instances, creates a `tar.gz` backup of all storage directories in `~/qdrant_backup/`, and deletes the original `~/.qdrant_storage*` directories.
+  - **Security Mandates**:
+    - **Symlink Protection**: Validates that all storage paths are directories and NOT symbolic links before processing (uses `os.Lstat`).
+    - **Non-Interactive Safety**: Implements a 10-minute timeout for `tar` and a 5-minute timeout for `rm` via `context.WithTimeout` to prevent hangs in CI/CD.
+    - **Terminal Awareness**: Only attaches `os.Stdin` to the `sudo` process if an interactive terminal (`isatty`) is detected.
+    - **Injection Prevention**: Uses the `--` argument separator when passing variable paths to `tar` and `rm`.
   - **Note**: Deletion requires `sudo` as Docker volumes are typically owned by root.
 
 ### 2. Internal Abstractions (`internal/`)

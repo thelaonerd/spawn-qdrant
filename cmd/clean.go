@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -52,17 +53,29 @@ and deletes the storage directories using sudo.`,
 		}
 
 		fmt.Printf("Backing up storage to %s...\n", backupFile)
+		fmt.Println("Note: This operation uses 'sudo' to access files owned by root; you may be prompted for your password.")
 
 		// Construct tar args
 		tarArgs := []string{"tar", "-czf", backupFile, "--"}
 		tarArgs = append(tarArgs, validatedMatches...)
 
 		// IMPORTANT: tar backup usually requires sudo if files are owned by root
-		tarCmd := exec.Command("sudo", tarArgs...)
+		// We use a timeout to prevent hanging in non-interactive environments
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+
+		tarCmd := exec.CommandContext(ctx, "sudo", tarArgs...)
 		tarCmd.Stdout = os.Stdout
 		tarCmd.Stderr = os.Stderr
-		tarCmd.Stdin = os.Stdin // Allow sudo password input
+		// Only attach Stdin if we are in an interactive terminal
+		if isatty(os.Stdin) {
+			tarCmd.Stdin = os.Stdin
+		}
+
 		if err := tarCmd.Run(); err != nil {
+			if ctx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("backup timed out (sudo might be waiting for a password in a non-interactive environment)")
+			}
 			return fmt.Errorf("failed to backup storage: %w", err)
 		}
 
@@ -70,17 +83,36 @@ and deletes the storage directories using sudo.`,
 		fmt.Println("Deleting storage directories with sudo...")
 		rmArgs := []string{"rm", "-rf", "--"}
 		rmArgs = append(rmArgs, validatedMatches...)
-		rmCmd := exec.Command("sudo", rmArgs...)
+
+		rmCtx, rmCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer rmCancel()
+
+		rmCmd := exec.CommandContext(rmCtx, "sudo", rmArgs...)
 		rmCmd.Stdout = os.Stdout
 		rmCmd.Stderr = os.Stderr
-		rmCmd.Stdin = os.Stdin
+		if isatty(os.Stdin) {
+			rmCmd.Stdin = os.Stdin
+		}
+
 		if err := rmCmd.Run(); err != nil {
+			if rmCtx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("cleanup timed out (sudo might be waiting for a password in a non-interactive environment)")
+			}
 			return fmt.Errorf("failed to delete storage: %w", err)
 		}
 
 		fmt.Println("Clean up completed successfully.")
 		return nil
 	},
+}
+
+// isatty performs a basic check to see if the file is a terminal
+func isatty(f *os.File) bool {
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return (info.Mode() & os.ModeCharDevice) != 0
 }
 
 func filterStorageDirs(matches []string) []string {

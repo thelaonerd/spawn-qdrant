@@ -37,29 +37,85 @@ func isCommandAvailable(name string) bool {
 	return err == nil
 }
 
-func RunCommand(args ...string) error {
+type QdrantConfig struct {
+	Name       string
+	Network    string
+	RestPort   int
+	GrpcPort   int
+	StorageDir string
+}
+
+func runCommand(args ...string) error {
 	cmd := exec.Command(string(containerRuntime), args...)
-	cmd.Stdout = nil // We might want to stream stdout/stderr later
+	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd.Run()
 }
 
-func RunCommandOutput(args ...string) (string, error) {
+func runCommandOutput(args ...string) (string, error) {
 	cmd := exec.Command(string(containerRuntime), args...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	cmd.Stderr = &out // Capture stderr too for debugging
+	cmd.Stderr = &out
 	err := cmd.Run()
 	return strings.TrimSpace(out.String()), err
 }
 
 func EnsureImage(imageName string) error {
-	// Check if image exists locally
-	_, err := RunCommandOutput("inspect", "--type=image", imageName)
+	_, err := runCommandOutput("inspect", "--type=image", imageName)
 	if err == nil {
-		return nil // Image exists
+		return nil
 	}
 
 	fmt.Printf("Image %s not found locally. Pulling...\n", imageName)
-	return RunCommand("pull", imageName)
+	return runCommand("pull", imageName)
+}
+
+func CreateNetwork(name string) error {
+	_, err := runCommandOutput("network", "create", name)
+	return err
+}
+
+func RemoveNetwork(name string) error {
+	return runCommand("network", "rm", name)
+}
+
+func ListContainerNames(prefix string) ([]string, error) {
+	output, err := runCommandOutput("ps", "-a", "--format", "{{.Names}}")
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, line := range strings.Split(output, "\n") {
+		name := strings.TrimSpace(line)
+		if strings.HasPrefix(name, prefix) {
+			names = append(names, name)
+		}
+	}
+	return names, nil
+}
+
+func HasRunningContainers(filter string) (bool, error) {
+	output, err := runCommandOutput("ps", "-q", "-f", filter)
+	if err != nil {
+		return false, err
+	}
+	return len(strings.TrimSpace(output)) > 0, nil
+}
+
+func StopAndRemoveContainer(name string) error {
+	_ = runCommand("stop", name)
+	return runCommand("rm", name)
+}
+
+func RunQdrant(cfg QdrantConfig) error {
+	return runCommand("run", "-d",
+		"--name", cfg.Name,
+		"--net", cfg.Network,
+		"--restart", "unless-stopped",
+		"-p", fmt.Sprintf("%d:6333", cfg.RestPort),
+		"-p", fmt.Sprintf("%d:6334", cfg.GrpcPort),
+		"-v", fmt.Sprintf("%s:/qdrant/storage", cfg.StorageDir),
+		"qdrant/qdrant",
+	)
 }

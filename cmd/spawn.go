@@ -75,15 +75,7 @@ If instance_count is not provided, it estimates the maximum instances based on a
 		networkName := "qdrant_network"
 
 		// Create network if not exists
-		if _, err := container.RunCommandOutput("network", "create", networkName); err != nil {
-			// Ignore error if network already exists, but ideally checking first is better.
-			// However, 'network create' usually errors if it exists.
-			// Let's rely on docker/podman behavior or check.
-			// For simplicity, we just try to create and ignore "already exists" errors if possible,
-			// checking output or just proceeding.
-			// A specific check would be cleaner:
-			// logic to check network... skip for brevity unless critical.
-		}
+		_ = container.CreateNetwork(networkName)
 
 		currentUser, err := user.Current()
 		if err != nil {
@@ -104,39 +96,20 @@ If instance_count is not provided, it estimates the maximum instances based on a
 				return fmt.Errorf("failed to create storage dir %s: %w", storageDir, err)
 			}
 
-			// Calculate ports
-			// Per spec:
-			// If n=1: existing ports.
-			// If n>1: start + 2*(i). Wait, spec says:
-			// "The actual ports used will be REST_PORT + 2*(instance_count - 1)" -> This formula in spec seems to describe the END port?
-			// Spec example:
-			// n=1: 6333, 6334. (i=0 -> 6333 + 2*0 = 6333)
-			// n=2:
-			//   i=0 -> 6333, 6334
-			//   i=1 -> 6335, 6336 (6333 + 2*1)
-
 			restPort := startRest + (2 * i)
 			grpcPort := startGrpc + (2 * i)
 
 			fmt.Printf("Spawning %s on ports %d(REST), %d(GRPC)...\n", containerName, restPort, grpcPort)
 
-			// docker run -d --name qdrant-01 --net qdrant_network --restart unless-stopped -p 6333:6333 -p 6334:6334 -v ~/.qdrant_storage01:/qdrant/storage qdrant/qdrant
-			err := container.RunCommand("run", "-d",
-				"--name", containerName,
-				"--net", networkName,
-				"--restart", "unless-stopped",
-				"-p", fmt.Sprintf("%d:6333", restPort),
-				"-p", fmt.Sprintf("%d:6334", grpcPort),
-				"-v", fmt.Sprintf("%s:/qdrant/storage", storageDir),
-				"qdrant/qdrant",
-			)
+			err := container.RunQdrant(container.QdrantConfig{
+				Name:       containerName,
+				Network:    networkName,
+				RestPort:   restPort,
+				GrpcPort:   grpcPort,
+				StorageDir: storageDir,
+			})
 			if err != nil {
 				fmt.Printf("Failed to spawn %s: %v\n", containerName, err)
-				// Clean up lock if we fail?
-				// Since we might have partial success (some spawned), we shouldn't blindly remove lock.
-				// But we are returning error, so maybe we should?
-				// If we error out, user has to fix state.
-				// Returning error here stops the loop.
 				lock.Remove()
 				return err
 			}

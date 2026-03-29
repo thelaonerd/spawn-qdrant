@@ -90,7 +90,7 @@ spawn-qdrant stop all
 
 ### 3. Clean Up (`clean`)
 
-This is a destructive command that helps reset your environment while keeping a backup.
+This is a destructive command that helps reset your environment while keeping a backup. It includes several security measures to ensure safe operation.
 
 ```bash
 spawn-qdrant clean
@@ -100,6 +100,12 @@ spawn-qdrant clean
 1. Stops all running Qdrant instances.
 2. Creates a `tar.gz` backup of all `~/.qdrant_storage*` directories into `~/qdrant_backup/`.
 3. Deletes the original `~/.qdrant_storage*` directories.
+
+**Security Features:**
+- **Symlink Validation**: Prevents privilege escalation by verifying that each storage path is a real directory and not a symbolic link.
+- **Process Timeouts**: Automated timeouts (10m for backup, 5m for cleanup) prevent the application from hanging indefinitely in non-interactive environments (e.g., CI/CD) if `sudo` waits for a password.
+- **Interactive Check**: Only attempts to read passwords from the terminal if an interactive session is detected.
+- **Argument Injection Protection**: Uses standard command-line separators (`--`) to prevent malicious paths from being interpreted as command arguments.
 
 > **Important**: This command uses `sudo` to delete the storage directories because Docker-created volumes are often owned by root. You may be prompted for your password.
 

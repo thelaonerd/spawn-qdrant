@@ -23,16 +23,17 @@ func Create() error {
 		return err
 	}
 
-	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("lock file %s exists. Application is likely running. Use 'stop' or 'clean' first", path)
-	}
-
-	// Create file
-	f, err := os.Create(path)
+	// Use O_CREATE | O_EXCL to ensure atomic creation.
+	// This fails if the file already exists.
+	// Permissions 0600 (read/write only by owner) for security.
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
-		return err
+		if os.IsExist(err) {
+			return fmt.Errorf("lock file %s exists. Application is likely running. Use 'stop' or 'clean' first", path)
+		}
+		return fmt.Errorf("failed to create lock file: %w", err)
 	}
-	defer f.Close()
+	f.Close()
 	return nil
 }
 
