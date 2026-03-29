@@ -65,6 +65,7 @@ func stopInstance(n int) error {
 	// Check if any qdrant instances remain
 	anyRemaining, err := container.HasRunningContainers("name=qdrant-")
 	if err == nil && !anyRemaining {
+		_ = container.RemoveNetwork("qdrant_network")
 		_ = lock.Remove()
 	}
 	return nil

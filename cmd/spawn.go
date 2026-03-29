@@ -79,6 +79,7 @@ If instance_count is not provided, it estimates the maximum instances based on a
 
 		currentUser, err := user.Current()
 		if err != nil {
+			lock.Remove()
 			return err
 		}
 		homeDir := currentUser.HomeDir
@@ -93,6 +94,7 @@ If instance_count is not provided, it estimates the maximum instances based on a
 			storageDir := filepath.Join(homeDir, fmt.Sprintf(".qdrant_storage%s", suffix))
 
 			if err := os.MkdirAll(storageDir, 0755); err != nil {
+				lock.Remove()
 				return fmt.Errorf("failed to create storage dir %s: %w", storageDir, err)
 			}
 

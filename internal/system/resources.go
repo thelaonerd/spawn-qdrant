@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -21,7 +22,7 @@ func GetAvailableRAM() (uint64, error) {
 		if strings.HasPrefix(line, "MemAvailable:") {
 			parts := strings.Fields(line)
 			if len(parts) >= 2 {
-				kb, err := strconvToUint64(parts[1])
+				kb, err := strconv.ParseUint(parts[1], 10, 64)
 				if err != nil {
 					return 0, err
 				}
@@ -37,15 +38,4 @@ func EstimateInstances(availableRAMMB uint64) (maxStartup uint64, maxEfficient u
 	maxStartup = availableRAMMB / 256
 	maxEfficient = availableRAMMB / 512
 	return
-}
-
-func strconvToUint64(s string) (uint64, error) {
-	var res uint64
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return 0, fmt.Errorf("invalid digit")
-		}
-		res = res*10 + uint64(c-'0')
-	}
-	return res, nil
 }

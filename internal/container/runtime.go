@@ -104,8 +104,8 @@ func HasRunningContainers(filter string) (bool, error) {
 }
 
 func StopAndRemoveContainer(name string) error {
-	_ = runCommand("stop", name)
-	return runCommand("rm", name)
+	_ = runCommand("stop", "--", name)
+	return runCommand("rm", "--", name)
 }
 
 func RunQdrant(cfg QdrantConfig) error {
