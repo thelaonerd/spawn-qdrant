@@ -1,19 +1,31 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/thelaonerd/spawn-qdrant/internal/config"
+	"github.com/spf13/viper"
 	"github.com/thelaonerd/spawn-qdrant/internal/container"
 	"github.com/thelaonerd/spawn-qdrant/internal/lock"
 	"github.com/thelaonerd/spawn-qdrant/internal/system"
 )
+
+type SpawnResult struct {
+	AvailableRAMMB   uint64 `json:"available_ram_mb"`
+	MaxStartup       uint64 `json:"max_startup"`
+	MaxEfficient     uint64 `json:"max_efficient"`
+	SpawnedInstances int    `json:"spawned_instances"`
+	Status           string `json:"status"`
+}
 
 var spawnCmd = &cobra.Command{
 	Use:   "spawn [instance_count]",
@@ -22,36 +34,44 @@ var spawnCmd = &cobra.Command{
 If instance_count is not provided, it estimates the maximum instances based on available RAM.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Acquire lock
-		if err := lock.Create(); err != nil {
-			return err
-		}
+		// Set up signal handling for graceful exit
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer cancel()
 
-		// Pre-flight check: Image
-		fmt.Println("Checking for qdrant/qdrant image...")
-		if err := container.EnsureImage("qdrant/qdrant"); err != nil {
-			// Clean up lock if we fail here?
-			// Ideally yes, but maybe simple error return is fine for now,
-			// user can run 'stop all' or manually remove.
-			// Better: defer lock removal if error, but wait, we want to KEEP lock if success.
-			// So only remove on error.
-			lock.Remove()
-			return fmt.Errorf("failed to ensure qdrant image: %w", err)
+		// Acquire lock only if we actually intend to spawn (not just estimate)
+		if len(args) > 0 {
+			if err := lock.Create(); err != nil {
+				return err
+			}
 		}
 
 		// Pre-flight check: RAM
 		ramMB, err := system.GetAvailableRAM()
 		if err != nil {
-			lock.Remove()
+			if len(args) > 0 {
+				lock.Remove()
+			}
 			return fmt.Errorf("failed to get available RAM: %w", err)
 		}
 		maxStartup, maxEfficient := system.EstimateInstances(ramMB)
 
 		if len(args) == 0 {
-			lock.Remove() // Estimation only, no spawn
-			fmt.Printf("Available RAM: %d MB\n", ramMB)
-			fmt.Printf("Max instances (startup only, 256MB/each): %d\n", maxStartup)
-			fmt.Printf("Max efficient instances (vector ops, 512MB/each): %d\n", maxEfficient)
+			if viper.GetString("output") == "json" {
+				res := SpawnResult{
+					AvailableRAMMB:   ramMB,
+					MaxStartup:       maxStartup,
+					MaxEfficient:     maxEfficient,
+					SpawnedInstances: 0,
+					Status:           "estimation",
+				}
+				b, _ := json.MarshalIndent(res, "", "  ")
+				fmt.Fprintln(cmd.OutOrStdout(), string(b))
+				return nil
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Available RAM: %d MB\n", ramMB)
+			fmt.Fprintf(cmd.OutOrStdout(), "Max instances (startup only, 256MB/each): %d\n", maxStartup)
+			fmt.Fprintf(cmd.OutOrStdout(), "Max efficient instances (vector ops, 512MB/each): %d\n", maxEfficient)
 			return nil
 		}
 
@@ -68,12 +88,17 @@ If instance_count is not provided, it estimates the maximum instances based on a
 		}
 
 		if count > maxEfficient {
-			fmt.Printf("WARNING: Requested %d instances, but max efficient count is %d. Performance may be degraded.\n", count, maxEfficient)
+			logInfo(cmd, "WARNING: Requested %d instances, but max efficient count is %d. Performance may be degraded.", count, maxEfficient)
 		}
 
-		cfg := config.LoadConfig()
-		networkName := "qdrant_network"
+		// Pre-flight check: Image
+		logInfo(cmd, "Checking for qdrant/qdrant image...")
+		if err := container.EnsureImage("qdrant/qdrant"); err != nil {
+			lock.Remove()
+			return fmt.Errorf("failed to ensure qdrant image: %w", err)
+		}
 
+		networkName := "qdrant_network"
 		// Create network if not exists
 		_ = container.CreateNetwork(networkName)
 
@@ -84,26 +109,40 @@ If instance_count is not provided, it estimates the maximum instances based on a
 		}
 		homeDir := currentUser.HomeDir
 
-		startRest := cfg.RestPort
-		startGrpc := cfg.GrpcPort
+		startRest := viper.GetInt("rest-port")
+		startGrpc := viper.GetInt("grpc-port")
 
 		for i := 0; i < n; i++ {
+			select {
+			case <-ctx.Done():
+				logInfo(cmd, "\nInterrupted by user. Stopping further spawns...")
+				// If we spawned at least one, we keep the lock because there are running instances
+				if i == 0 {
+					lock.Remove()
+				}
+				return ctx.Err()
+			default:
+				// Continue spawning
+			}
+
 			instanceNum := i + 1
 			suffix := fmt.Sprintf("%02d", instanceNum)
 			containerName := fmt.Sprintf("qdrant-%s", suffix)
 			storageDir := filepath.Join(homeDir, fmt.Sprintf(".qdrant_storage%s", suffix))
 
 			if err := os.MkdirAll(storageDir, 0755); err != nil {
-				lock.Remove()
+				if i == 0 {
+					lock.Remove()
+				}
 				return fmt.Errorf("failed to create storage dir %s: %w", storageDir, err)
 			}
 
 			restPort := startRest + (2 * i)
 			grpcPort := startGrpc + (2 * i)
 
-			fmt.Printf("Spawning %s on ports %d(REST), %d(GRPC)...\n", containerName, restPort, grpcPort)
+			logInfo(cmd, "Spawning %s on ports %d(REST), %d(GRPC)...", containerName, restPort, grpcPort)
 
-			err := container.RunQdrant(container.QdrantConfig{
+			err = container.RunQdrant(container.QdrantConfig{
 				Name:       containerName,
 				Network:    networkName,
 				RestPort:   restPort,
@@ -111,18 +150,39 @@ If instance_count is not provided, it estimates the maximum instances based on a
 				StorageDir: storageDir,
 			})
 			if err != nil {
-				fmt.Printf("Failed to spawn %s: %v\n", containerName, err)
-				lock.Remove()
+				logInfo(cmd, "Failed to spawn %s: %v", containerName, err)
+				if i == 0 {
+					lock.Remove()
+				}
 				return err
 			}
 
 			if i < n-1 {
-				fmt.Println("Waiting 30 seconds before spawning next instance...")
-				time.Sleep(30 * time.Second)
+				logInfo(cmd, "Waiting 30 seconds before spawning next instance...")
+				// Wait but allow cancellation
+				select {
+				case <-time.After(30 * time.Second):
+				case <-ctx.Done():
+					logInfo(cmd, "\nInterrupted during wait. Stopping further spawns...")
+					return ctx.Err()
+				}
 			}
 		}
 
-		fmt.Printf("Successfully spawned %d instances.\n", n)
+		if viper.GetString("output") == "json" {
+			res := SpawnResult{
+				AvailableRAMMB:   ramMB,
+				MaxStartup:       maxStartup,
+				MaxEfficient:     maxEfficient,
+				SpawnedInstances: n,
+				Status:           "success",
+			}
+			b, _ := json.MarshalIndent(res, "", "  ")
+			fmt.Fprintln(cmd.OutOrStdout(), string(b))
+		} else {
+			fmt.Fprintf(cmd.OutOrStdout(), "Successfully spawned %d instances.\n", n)
+		}
+		
 		return nil
 	},
 }

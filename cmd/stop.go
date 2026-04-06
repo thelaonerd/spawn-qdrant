@@ -17,14 +17,14 @@ var stopCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		arg := args[0]
 		if arg == "all" {
-			return stopAll()
+			return stopAll(cmd)
 		}
 
 		n, err := strconv.Atoi(arg)
 		if err != nil {
 			return fmt.Errorf("argument must be 'all' or a valid instance number")
 		}
-		return stopInstance(n)
+		return stopInstance(cmd, n)
 	},
 }
 
@@ -32,7 +32,7 @@ func init() {
 	rootCmd.AddCommand(stopCmd)
 }
 
-func stopAll() error {
+func stopAll(cmd *cobra.Command) error {
 	// Find all containers starting with qdrant-
 	targets, err := container.ListContainerNames("qdrant-")
 	if err != nil {
@@ -40,13 +40,13 @@ func stopAll() error {
 	}
 
 	if len(targets) == 0 {
-		fmt.Println("No qdrant instances found to stop.")
+		logInfo(cmd, "No qdrant instances found to stop.")
 		return nil
 	}
 
 	for _, name := range targets {
-		if err := stopAndRemove(name); err != nil {
-			fmt.Printf("Failed to stop/remove %s: %v\n", name, err)
+		if err := stopAndRemove(cmd, name); err != nil {
+			logInfo(cmd, "Failed to stop/remove %s: %v", name, err)
 		}
 	}
 
@@ -56,9 +56,9 @@ func stopAll() error {
 	return lock.Remove()
 }
 
-func stopInstance(n int) error {
+func stopInstance(cmd *cobra.Command, n int) error {
 	name := fmt.Sprintf("qdrant-%02d", n)
-	if err := stopAndRemove(name); err != nil {
+	if err := stopAndRemove(cmd, name); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func stopInstance(n int) error {
 	return nil
 }
 
-func stopAndRemove(name string) error {
-	fmt.Printf("Stopping and removing %s...\n", name)
+func stopAndRemove(cmd *cobra.Command, name string) error {
+	logInfo(cmd, "Stopping and removing %s...", name)
 	return container.StopAndRemoveContainer(name)
 }

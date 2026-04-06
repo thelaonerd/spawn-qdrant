@@ -32,7 +32,7 @@ func TestFilterStorageDirs(t *testing.T) {
 
 	inputs := []string{validDir, regularFile, symlink, filepath.Join(tmpDir, "non_existent")}
 	
-	validated := filterStorageDirs(inputs)
+	validated := filterStorageDirs(cleanCmd, inputs)
 
 	if len(validated) != 1 {
 		t.Errorf("expected 1 validated match, got %d: %v", len(validated), validated)

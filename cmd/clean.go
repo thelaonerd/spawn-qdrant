@@ -1,18 +1,23 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+var force bool
 
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
@@ -20,9 +25,24 @@ var cleanCmd = &cobra.Command{
 	Long: `Stops all qdrant instances, creates a backup of storage in ~/qdrant_backup, 
 and deletes the storage directories using sudo.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Interactive prompt for destructive action
+		if !viper.GetBool("force") && isatty(os.Stdin) {
+			fmt.Fprintf(cmd.OutOrStdout(), "WARNING: This will stop all instances and delete storage directories (with backup).\nAre you sure you want to continue? [y/N]: ")
+			reader := bufio.NewReader(os.Stdin)
+			response, err := reader.ReadString('\n')
+			if err != nil {
+				return err
+			}
+			response = strings.ToLower(strings.TrimSpace(response))
+			if response != "y" && response != "yes" {
+				logInfo(cmd, "Clean operation cancelled.")
+				return nil
+			}
+		}
+
 		// 1. Stop all instances
-		fmt.Println("Stopping all instances...")
-		if err := stopAll(); err != nil { // reusing stopAll from stop.go
+		logInfo(cmd, "Stopping all instances...")
+		if err := stopAll(cmd); err != nil { // reusing stopAll from stop.go
 			return fmt.Errorf("failed to stop instances: %w", err)
 		}
 
@@ -47,15 +67,15 @@ and deletes the storage directories using sudo.`,
 			return fmt.Errorf("failed to glob storage dirs: %w", err)
 		}
 
-		validatedMatches := filterStorageDirs(matches)
+		validatedMatches := filterStorageDirs(cmd, matches)
 
 		if len(validatedMatches) == 0 {
-			fmt.Println("No valid storage directories found to clean.")
+			logInfo(cmd, "No valid storage directories found to clean.")
 			return nil
 		}
 
-		fmt.Printf("Backing up storage to %s...\n", backupFile)
-		fmt.Println("Note: This operation uses 'sudo' to access files owned by root; you may be prompted for your password.")
+		logInfo(cmd, "Backing up storage to %s...", backupFile)
+		logInfo(cmd, "Note: This operation uses 'sudo' to access files owned by root; you may be prompted for your password.")
 
 		// Construct tar args
 		tarArgs := []string{"tar", "-czf", backupFile, "--"}
@@ -67,8 +87,8 @@ and deletes the storage directories using sudo.`,
 		defer cancel()
 
 		tarCmd := exec.CommandContext(ctx, "sudo", tarArgs...)
-		tarCmd.Stdout = os.Stdout
-		tarCmd.Stderr = os.Stderr
+		tarCmd.Stdout = cmd.OutOrStdout()
+		tarCmd.Stderr = cmd.ErrOrStderr()
 		// Only attach Stdin if we are in an interactive terminal
 		if isatty(os.Stdin) {
 			tarCmd.Stdin = os.Stdin
@@ -82,7 +102,7 @@ and deletes the storage directories using sudo.`,
 		}
 
 		// 3. Delete storage
-		fmt.Println("Deleting storage directories with sudo...")
+		logInfo(cmd, "Deleting storage directories with sudo...")
 		rmArgs := []string{"rm", "-rf", "--"}
 		rmArgs = append(rmArgs, validatedMatches...)
 
@@ -90,8 +110,8 @@ and deletes the storage directories using sudo.`,
 		defer rmCancel()
 
 		rmCmd := exec.CommandContext(rmCtx, "sudo", rmArgs...)
-		rmCmd.Stdout = os.Stdout
-		rmCmd.Stderr = os.Stderr
+		rmCmd.Stdout = cmd.OutOrStdout()
+		rmCmd.Stderr = cmd.ErrOrStderr()
 		if isatty(os.Stdin) {
 			rmCmd.Stdin = os.Stdin
 		}
@@ -103,7 +123,7 @@ and deletes the storage directories using sudo.`,
 			return fmt.Errorf("failed to delete storage: %w", err)
 		}
 
-		fmt.Println("Clean up completed successfully.")
+		logInfo(cmd, "Clean up completed successfully.")
 		return nil
 	},
 }
@@ -115,20 +135,20 @@ func isatty(f *os.File) bool {
 	return err == 0
 }
 
-func filterStorageDirs(matches []string) []string {
+func filterStorageDirs(cmd *cobra.Command, matches []string) []string {
 	var validated []string
 	for _, match := range matches {
 		info, err := os.Lstat(match)
 		if err != nil {
-			fmt.Printf("Warning: could not stat %s, skipping: %v\n", match, err)
+			logInfo(cmd, "Warning: could not stat %s, skipping: %v", match, err)
 			continue
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
-			fmt.Printf("Warning: %s is a symbolic link, skipping for security reasons\n", match)
+			logInfo(cmd, "Warning: %s is a symbolic link, skipping for security reasons", match)
 			continue
 		}
 		if !info.IsDir() {
-			fmt.Printf("Warning: %s is not a directory, skipping: %s\n", match, match)
+			logInfo(cmd, "Warning: %s is not a directory, skipping", match)
 			continue
 		}
 		validated = append(validated, match)
@@ -137,5 +157,7 @@ func filterStorageDirs(matches []string) []string {
 }
 
 func init() {
+	cleanCmd.Flags().BoolVarP(&force, "force", "f", false, "Force clean without prompting")
+	viper.BindPFlag("force", cleanCmd.Flags().Lookup("force"))
 	rootCmd.AddCommand(cleanCmd)
 }
