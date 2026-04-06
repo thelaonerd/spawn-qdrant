@@ -62,22 +62,22 @@ func runCommandOutput(args ...string) (string, error) {
 }
 
 func EnsureImage(imageName string) error {
-	_, err := runCommandOutput("inspect", "--type=image", imageName)
+	_, err := runCommandOutput("inspect", "--type=image", "--", imageName)
 	if err == nil {
 		return nil
 	}
 
 	fmt.Printf("Image %s not found locally. Pulling...\n", imageName)
-	return runCommand("pull", imageName)
+	return runCommand("pull", "--", imageName)
 }
 
 func CreateNetwork(name string) error {
-	_, err := runCommandOutput("network", "create", name)
+	_, err := runCommandOutput("network", "create", "--", name)
 	return err
 }
 
 func RemoveNetwork(name string) error {
-	return runCommand("network", "rm", name)
+	return runCommand("network", "rm", "--", name)
 }
 
 func ListContainerNames(prefix string) ([]string, error) {
@@ -109,6 +109,11 @@ func StopAndRemoveContainer(name string) error {
 }
 
 func RunQdrant(cfg QdrantConfig) error {
+	// Security check for storage directory to prevent arbitrary volume mounting
+	if strings.Contains(cfg.StorageDir, ":") {
+		return fmt.Errorf("invalid storage directory: path cannot contain ':'")
+	}
+
 	return runCommand("run", "-d",
 		"--name", cfg.Name,
 		"--net", cfg.Network,

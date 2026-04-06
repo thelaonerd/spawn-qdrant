@@ -7,7 +7,9 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/spf13/cobra"
 )
@@ -106,13 +108,11 @@ and deletes the storage directories using sudo.`,
 	},
 }
 
-// isatty performs a basic check to see if the file is a terminal
+// isatty performs a robust check to see if the file is a terminal using ioctl
 func isatty(f *os.File) bool {
-	info, err := f.Stat()
-	if err != nil {
-		return false
-	}
-	return (info.Mode() & os.ModeCharDevice) != 0
+	var termios syscall.Termios
+	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TCGETS), uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+	return err == 0
 }
 
 func filterStorageDirs(matches []string) []string {
