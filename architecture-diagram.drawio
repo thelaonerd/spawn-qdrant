@@ -1,0 +1,273 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram name="Architecture" id="0">
+    <mxGraphModel dx="1281" dy="668" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" value="&lt;b&gt;spawn-qdrant Architecture&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="400" x="455" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#666666;" value="Go CLI for Qdrant Container Management" vertex="1">
+          <mxGeometry height="20" width="400" x="460" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="user" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" value="User&lt;br&gt;CLI Commands" vertex="1">
+          <mxGeometry height="60" width="100" x="130" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="cmdBox" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#333333;dashed=1;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="110" width="640" x="260" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="cmdLabel" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#9673a6;" value="&lt;b&gt;Presentation Layer (cmd/)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="200" x="270" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="check" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;fontSize=10;" value="check&lt;br&gt;RAM Estimation" vertex="1">
+          <mxGeometry height="65" width="90" x="280" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="spawn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;fontSize=10;" value="spawn&lt;br&gt;Create Instances" vertex="1">
+          <mxGeometry height="65" width="90" x="390" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="stop" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;fontSize=10;" value="stop&lt;br&gt;Stop Instances" vertex="1">
+          <mxGeometry height="65" width="90" x="500" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="clean" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;fontSize=10;" value="clean&lt;br&gt;Backup &amp;amp; Delete" vertex="1">
+          <mxGeometry height="65" width="90" x="610" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="version" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;fontSize=10;" value="version&lt;br&gt;Version Info" vertex="1">
+          <mxGeometry height="65" width="90" x="720" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="completion" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;fontSize=10;" value="completion&lt;br&gt;Shell Scripts" vertex="1">
+          <mxGeometry height="65" width="70" x="820" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="rootCmd" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;fontStyle=1;" value="&lt;b&gt;root.go&lt;/b&gt;&lt;br&gt;CLI Entry Point&lt;br&gt;Command Routing" vertex="1">
+          <mxGeometry height="65" width="60" x="150" y="162.5" as="geometry" />
+        </mxCell>
+        <mxCell id="userToRoot" edge="1" parent="1" source="user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=9;" target="rootCmd" value="CLI invocation">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rootToCheck" edge="1" parent="1" source="rootCmd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;fontSize=9;" target="check" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="317" as="sourcePoint" />
+            <mxPoint x="280" y="317" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rootToSpawn" edge="1" parent="1" source="rootCmd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;fontSize=9;" target="spawn" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="320" as="sourcePoint" />
+            <mxPoint x="390" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rootToStop" edge="1" parent="1" source="rootCmd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;fontSize=9;" target="stop" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="323" as="sourcePoint" />
+            <mxPoint x="500" y="323" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rootToClean" edge="1" parent="1" source="rootCmd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;fontSize=9;" target="clean" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="326" as="sourcePoint" />
+            <mxPoint x="610" y="326" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rootToVersion" edge="1" parent="1" source="rootCmd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;fontSize=9;" target="version" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="329" as="sourcePoint" />
+            <mxPoint x="720" y="329" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rootToCompletion" edge="1" parent="1" source="rootCmd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;fontSize=9;" target="completion" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="332" as="sourcePoint" />
+            <mxPoint x="820" y="332" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bizBox" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;dashed=1;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="140" width="640" x="260" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="bizLabel" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#82b366;" value="&lt;b&gt;Business Logic Layer (internal/)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="250" x="270" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="containerPkg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#82b366;fontSize=9;" value="&lt;b&gt;container&lt;/b&gt;&lt;br&gt;Docker/Podman Operations&lt;br&gt;RunQdrant() | EnsureImage()&lt;br&gt;CreateNetwork() | StopContainer()" vertex="1">
+          <mxGeometry height="90" width="120" x="280" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="lockPkg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#82b366;fontSize=9;" value="&lt;b&gt;lock&lt;/b&gt;&lt;br&gt;File-Based Locking&lt;br&gt;Create() | Remove()&lt;br&gt;Exists()" vertex="1">
+          <mxGeometry height="90" width="100" x="420" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="systemPkg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#82b366;fontSize=9;" value="&lt;b&gt;system&lt;/b&gt;&lt;br&gt;Resource Checking&lt;br&gt;GetAvailableRAM()&lt;br&gt;EstimateInstances()" vertex="1">
+          <mxGeometry height="90" width="110" x="540" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="configPkg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#82b366;fontSize=9;" value="&lt;b&gt;config&lt;/b&gt;&lt;br&gt;Configuration Loading&lt;br&gt;LoadConfig()" vertex="1">
+          <mxGeometry height="90" width="100" x="740" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="spawnToContainer" edge="1" parent="1" source="spawn" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;" target="containerPkg" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="435" y="360" />
+              <mxPoint x="340" y="360" />
+              <mxPoint x="340" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="checkToSystem" edge="1" parent="1" source="check" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;" target="systemPkg" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="325" y="360" />
+              <mxPoint x="595" y="360" />
+              <mxPoint x="595" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cleanToLock" edge="1" parent="1" source="clean" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;" target="lockPkg" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="655" y="360" />
+              <mxPoint x="470" y="360" />
+              <mxPoint x="470" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="stopToContainer" edge="1" parent="1" source="stop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;" target="containerPkg" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="545" y="360" />
+              <mxPoint x="370" y="360" />
+              <mxPoint x="370" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="infraBox" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#333333;dashed=1;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="120" width="640" x="260" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="infraLabel" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#d79b00;" value="&lt;b&gt;Infrastructure Layer&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="200" x="270" y="545" as="geometry" />
+        </mxCell>
+        <mxCell id="docker" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#d79b00;fontSize=9;" value="&lt;b&gt;Docker&lt;/b&gt;&lt;br&gt;(Primary)&lt;br&gt;docker run | docker stop&lt;br&gt;docker network" vertex="1">
+          <mxGeometry height="75" width="110" x="280" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="podman" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#d79b00;fontSize=9;" value="&lt;b&gt;Podman&lt;/b&gt;&lt;br&gt;(Fallback)&lt;br&gt;podman run | podman stop&lt;br&gt;podman network" vertex="1">
+          <mxGeometry height="75" width="110" x="410" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="os" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#d79b00;fontSize=9;" value="&lt;b&gt;Linux OS&lt;/b&gt;&lt;br&gt;/proc/meminfo&lt;br&gt;File System | Signals" vertex="1">
+          <mxGeometry height="75" width="110" x="540" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="files" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#d79b00;fontSize=9;" value="&lt;b&gt;Storage&lt;/b&gt;&lt;br&gt;~/.qdrant_storage*&lt;br&gt;~/.spawn-qdrant.lock&lt;br&gt;~/qdrant_backup/" vertex="1">
+          <mxGeometry height="75" width="110" x="670" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="env" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#d79b00;fontSize=9;" value="&lt;b&gt;Config&lt;/b&gt;&lt;br&gt;Env Vars | .env file&lt;br&gt;~/.spawn-qdrant.yaml" vertex="1">
+          <mxGeometry height="75" width="90" x="800" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="containerToDocker" edge="1" parent="1" source="containerPkg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;fontSize=9;labelBackgroundColor=white;" target="docker" value="exec.Command">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="515" />
+              <mxPoint x="340" y="530" />
+              <mxPoint x="335" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="systemToOS" edge="1" parent="1" source="systemPkg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;fontSize=9;labelBackgroundColor=white;" target="os" value="os.Open">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="595" y="515" />
+              <mxPoint x="595" y="530" />
+              <mxPoint x="595" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lockToFiles" edge="1" parent="1" source="lockPkg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;fontSize=9;labelBackgroundColor=white;" target="files" value="os.Create/Remove">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="470" y="515" />
+              <mxPoint x="725" y="515" />
+              <mxPoint x="725" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="configToEnv" edge="1" parent="1" source="configPkg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;fontSize=9;labelBackgroundColor=white;" target="env" value="viper.Get*">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="790" y="515" />
+              <mxPoint x="790" y="530" />
+              <mxPoint x="845" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="outputBox" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;dashed=1;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="110" width="640" x="260" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="outputLabel" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#6c8ebf;" value="&lt;b&gt;Output: Qdrant Containers&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="200" x="270" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="qdrantNetwork" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;qdrant_network&lt;/b&gt;&lt;br&gt;(Docker Network)" vertex="1">
+          <mxGeometry height="60" width="120" x="280" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="qdrant1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#6c8ebf;fontSize=9;" value="&lt;b&gt;qdrant-01&lt;/b&gt;&lt;br&gt;REST: 6333 | gRPC: 6334&lt;br&gt;Storage: ~/.qdrant_storage01" vertex="1">
+          <mxGeometry height="60" width="130" x="430" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="qdrant2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#6c8ebf;fontSize=9;" value="&lt;b&gt;qdrant-02&lt;/b&gt;&lt;br&gt;REST: 6335 | gRPC: 6336&lt;br&gt;Storage: ~/.qdrant_storage02" vertex="1">
+          <mxGeometry height="60" width="130" x="580" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="qdrantN" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#6c8ebf;fontSize=9;dashed=1;" value="&lt;b&gt;qdrant-N&lt;/b&gt;&lt;br&gt;Auto-increment ports..." vertex="1">
+          <mxGeometry height="60" width="110" x="740" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="dockerToNetwork" edge="1" parent="1" source="docker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;" target="qdrantNetwork" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="335" y="660" />
+              <mxPoint x="335" y="675" />
+              <mxPoint x="340" y="675" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dockerToQdrant1" edge="1" parent="1" source="docker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;" target="qdrant1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="355" y="660" />
+              <mxPoint x="495" y="660" />
+              <mxPoint x="495" y="705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dockerToQdrant2" edge="1" parent="1" source="docker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;" target="qdrant2" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="375" y="660" />
+              <mxPoint x="645" y="660" />
+              <mxPoint x="645" y="705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="networkToContainer1" edge="1" parent="1" source="qdrantNetwork" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;dashed=1;" target="qdrant1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="745" />
+              <mxPoint x="430" y="745" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="container1To2" edge="1" parent="1" source="qdrant1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;dashed=1;" target="qdrant2" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="745" />
+              <mxPoint x="580" y="745" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="container2ToN" edge="1" parent="1" source="qdrant2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;dashed=1;" target="qdrantN" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="745" />
+              <mxPoint x="740" y="745" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legendBox" parent="1" style="text;html=1;strokeColor=#666666;fillColor=#f9f9f9;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=9;spacingLeft=5;" value="&lt;b&gt;Legend&lt;/b&gt;&lt;br&gt;&lt;br&gt;Blue: User/External&lt;br&gt;Purple: Presentation Layer&lt;br&gt;Green: Business Logic&lt;br&gt;Orange: Infrastructure&lt;br&gt;Light Blue: Output Containers&lt;br&gt;&lt;br&gt;&lt;b&gt;Flow:&lt;/b&gt;&lt;br&gt;User -&amp;gt; root.go&lt;br&gt;-&amp;gt; Subcommands -&amp;gt; Logic" vertex="1">
+          <mxGeometry height="130" width="160" x="920" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="flowLabel" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;rotation=-90;" value="&lt;b&gt;Data Flow&lt;/b&gt;" vertex="1">
+          <mxGeometry height="55" width="80" x="170" y="465" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
