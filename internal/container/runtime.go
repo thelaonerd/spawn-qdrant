@@ -3,8 +3,11 @@ package container
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
+	"unsafe"
 )
 
 type Runtime string
@@ -46,19 +49,64 @@ type QdrantConfig struct {
 }
 
 func runCommand(args ...string) error {
-	cmd := exec.Command(string(containerRuntime), args...)
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	return cmd.Run()
+	output, err := executeCommand(args...)
+	if err == nil || !shouldUseSudo(output, err) {
+		return err
+	}
+
+	_, sudoErr := executeCommandWithSudo(args...)
+	return sudoErr
 }
 
 func runCommandOutput(args ...string) (string, error) {
-	cmd := exec.Command(string(containerRuntime), args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
+	output, err := executeCommand(args...)
+	if err == nil || !shouldUseSudo(output, err) {
+		return strings.TrimSpace(output), err
+	}
+
+	output, err = executeCommandWithSudo(args...)
+	return strings.TrimSpace(output), err
+}
+
+// executeCommand runs the container runtime as the current user. The output
+// is retained so a permission failure can trigger the sudo fallback without
+// treating unrelated runtime errors as a request for privilege escalation.
+func executeCommand(args ...string) (string, error) {
+	return execute(exec.Command(string(containerRuntime), args...))
+}
+
+func executeCommandWithSudo(args ...string) (string, error) {
+	sudoArgs := append([]string{string(containerRuntime)}, args...)
+	return execute(exec.Command("sudo", sudoArgs...))
+}
+
+func execute(cmd *exec.Cmd) (string, error) {
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	if isInteractiveTerminal(os.Stdin) {
+		cmd.Stdin = os.Stdin
+	}
 	err := cmd.Run()
-	return strings.TrimSpace(out.String()), err
+	return output.String(), err
+}
+
+func shouldUseSudo(output string, err error) bool {
+	if err == nil || !isInteractiveTerminal(os.Stdin) {
+		return false
+	}
+	text := strings.ToLower(output + " " + err.Error())
+	return strings.Contains(text, "permission denied") ||
+		strings.Contains(text, "access denied") ||
+		strings.Contains(text, "must be root")
+}
+
+// isInteractiveTerminal prevents a non-interactive invocation from hanging
+// while sudo waits for a password that cannot be entered.
+func isInteractiveTerminal(file *os.File) bool {
+	var termios syscall.Termios
+	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, file.Fd(), uintptr(syscall.TCGETS), uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+	return err == 0
 }
 
 func EnsureImage(imageName string) error {

@@ -169,6 +169,14 @@ If instance_count is not provided, it estimates the maximum instances based on a
 			}
 		}
 
+		logInfo(cmd, "Waiting 30 seconds for containers to stabilize...")
+		select {
+		case <-time.After(30 * time.Second):
+		case <-ctx.Done():
+			logInfo(cmd, "\nInterrupted during stabilization wait.")
+			return ctx.Err()
+		}
+
 		if viper.GetString("output") == "json" {
 			res := SpawnResult{
 				AvailableRAMMB:   ramMB,
